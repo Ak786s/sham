@@ -1,0 +1,32 @@
+// MacroTables.java
+import java.util.*;
+
+class MacroTables {
+    // Macro Name Table (MNT)
+    HashMap<String, Integer> MNT = new HashMap<>();
+    // Macro Definition Table (MDT)
+    ArrayList<String> MDT = new ArrayList<>();
+
+    // Method to add macro in MNT
+    public void addMNT(String name, int index) {
+        MNT.put(name, index);
+    }
+
+    // Add line to MDT
+    public void addMDT(String line) {
+        MDT.add(line);
+    }
+
+    // Display MNT and MDT
+    public void displayTables() {
+        System.out.println("\n--- MNT (Macro Name Table) ---");
+        for (Map.Entry<String, Integer> entry : MNT.entrySet()) {
+            System.out.println(entry.getKey() + " → MDT Index: " + entry.getValue());
+        }
+
+        System.out.println("\n--- MDT (Macro Definition Table) ---");
+        for (int i = 0; i < MDT.size(); i++) {
+            System.out.println(i + " : " + MDT.get(i));
+        }
+    }
+}

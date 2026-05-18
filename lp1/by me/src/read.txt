@@ -1,0 +1,15 @@
+📘 How to Run in Eclipse
+
+1 Open Eclipse → Create a new Java Project → Name: TwoPassMacroProcessor
+
+2 Create 4 Java files inside src/ with the above code.
+
+3 Create a plain text file input.asm in the project root folder.
+
+4 Run Main.java.
+
+5 Check the generated:
+
+6 output_pass1.txt
+
+ output_pass2.txt

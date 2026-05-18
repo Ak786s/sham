@@ -1,0 +1,61 @@
+// PassOne.java
+import java.io.*;
+import java.util.*;
+
+class PassOne {
+    MacroTables tables = new MacroTables();
+    ArrayList<String> intermediateCode = new ArrayList<>();
+
+    public void execute(String inputFile) throws Exception {
+        BufferedReader br = new BufferedReader(new FileReader(inputFile));
+        String line;
+        boolean inMacro = false;
+        String macroName = "";
+
+        while ((line = br.readLine()) != null) {
+            line = line.trim();
+            if (line.equalsIgnoreCase("MACRO")) {
+                inMacro = true;
+                continue;
+            }
+
+            if (inMacro) {
+                if (macroName.isEmpty()) {
+                    // first line after MACRO is macro prototype
+                    String[] parts = line.split(" ");
+                    macroName = parts[0];
+                    tables.addMNT(macroName, tables.MDT.size());
+                    tables.addMDT(line);
+                } else if (line.equalsIgnoreCase("MEND")) {
+                    tables.addMDT("MEND");
+                    inMacro = false;
+                    macroName = "";
+                } else {
+                    tables.addMDT(line);
+                }
+            } else {
+                intermediateCode.add(line);
+            }
+        }
+        br.close();
+
+        // Write Pass 1 output
+        PrintWriter pw = new PrintWriter("output_pass1.txt");
+        pw.println("----- PASS 1 OUTPUT -----\n");
+        pw.println("Intermediate Code:");
+        for (String s : intermediateCode)
+            pw.println(s);
+
+        pw.println("\nMacro Name Table (MNT):");
+        for (Map.Entry<String, Integer> e : tables.MNT.entrySet())
+            pw.println(e.getKey() + " -> " + e.getValue());
+
+        pw.println("\nMacro Definition Table (MDT):");
+        for (int i = 0; i < tables.MDT.size(); i++)
+            pw.println(i + " : " + tables.MDT.get(i));
+
+        pw.close();
+        System.out.println("PASS 1 completed. Output written to output_pass1.txt");
+        tables.displayTables();
+    }
+}

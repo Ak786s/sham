@@ -1,0 +1,35 @@
+// PassTwo.java
+import java.io.*;
+import java.util.*;
+
+class PassTwo {
+    public void execute(PassOne pass1) throws Exception {
+        ArrayList<String> expandedCode = new ArrayList<>();
+
+        for (String line : pass1.intermediateCode) {
+            String[] parts = line.split(" ");
+            String mnemonic = parts[0];
+
+            if (pass1.tables.MNT.containsKey(mnemonic)) {
+                int index = pass1.tables.MNT.get(mnemonic);
+                for (int i = index + 1; i < pass1.tables.MDT.size(); i++) {
+                    String macroLine = pass1.tables.MDT.get(i);
+                    if (macroLine.equalsIgnoreCase("MEND"))
+                        break;
+                    String expanded = macroLine.replace("&ARG1", parts[1]);
+                    expandedCode.add(expanded);
+                }
+            } else {
+                expandedCode.add(line);
+            }
+        }
+
+        PrintWriter pw = new PrintWriter("output_pass2.txt");
+        pw.println("----- PASS 2 OUTPUT (Expanded Code) -----\n");
+        for (String s : expandedCode)
+            pw.println(s);
+        pw.close();
+
+        System.out.println("PASS 2 completed. Output written to output_pass2.txt");
+    }
+}

@@ -1,0 +1,131 @@
+import java.util.*;
+
+public class PageReplacementArray {
+    
+    // ---------- FIFO ----------
+    static int fifo(int[] pages, int cap) {
+        int[] mem = new int[cap];
+        Arrays.fill(mem, -1);
+        int faults = 0, pointer = 0;
+
+        for (int p : pages) {
+            boolean found = false;
+            for (int x : mem)
+                if (x == p) { found = true; break; }
+
+            if (!found) {
+                mem[pointer] = p;
+                pointer = (pointer + 1) % cap; // circular replacement
+                faults++;
+            }
+        }
+        return faults;
+    }
+
+    // ---------- LRU ----------
+    static int lru(int[] pages, int cap) {
+        int[] mem = new int[cap];
+        int[] lastUsed = new int[cap];
+        Arrays.fill(mem, -1);
+        int faults = 0;
+
+        for (int i = 0; i < pages.length; i++) {
+            int p = pages[i];
+            boolean found = false;
+            for (int j = 0; j < cap; j++) {
+                if (mem[j] == p) {
+                    found = true;
+                    lastUsed[j] = i; // update recent use
+                    break;
+                }
+            }
+
+            if (!found) {
+                int replaceIndex = -1;
+
+                // find empty slot first
+                for (int j = 0; j < cap; j++) {
+                    if (mem[j] == -1) {
+                        replaceIndex = j;
+                        break;
+                    }
+                }
+
+                // if no empty slot, find least recently used
+                if (replaceIndex == -1) {
+                    int minIndex = 0;
+                    for (int j = 1; j < cap; j++)
+                        if (lastUsed[j] < lastUsed[minIndex])
+                            minIndex = j;
+                    replaceIndex = minIndex;
+                }
+
+                mem[replaceIndex] = p;
+                lastUsed[replaceIndex] = i;
+                faults++;
+            }
+        }
+        return faults;
+    }
+
+    // ---------- OPTIMAL ----------
+    static int optimal(int[] pages, int cap) {
+        int[] mem = new int[cap];
+        Arrays.fill(mem, -1);
+        int faults = 0;
+
+        for (int i = 0; i < pages.length; i++) {
+            int p = pages[i];
+            boolean found = false;
+
+            for (int x : mem)
+                if (x == p) { found = true; break; }
+
+            if (!found) {
+                int replaceIndex = -1;
+
+                // Check for empty slot
+                for (int j = 0; j < cap; j++) {
+                    if (mem[j] == -1) {
+                        replaceIndex = j;
+                        break;
+                    }
+                }
+
+                // If no empty slot, find the page used farthest in the future
+                if (replaceIndex == -1) {
+                    int farthest = -1, indexToReplace = -1;
+
+                    for (int j = 0; j < cap; j++) {
+                        int nextUse = Integer.MAX_VALUE;
+                        for (int k = i + 1; k < pages.length; k++) {
+                            if (pages[k] == mem[j]) {
+                                nextUse = k;
+                                break;
+                            }
+                        }
+                        if (nextUse > farthest) {
+                            farthest = nextUse;
+                            indexToReplace = j;
+                        }
+                    }
+                    replaceIndex = indexToReplace;
+                }
+
+                mem[replaceIndex] = p;
+                faults++;
+            }
+        }
+        return faults;
+    }
+
+    // ---------- MAIN ----------
+    public static void main(String[] args) {
+        int[] pages = {7, 0, 1, 2, 0, 3, 0, 4, 2, 3, 0, 3, 2,1,2,0,1,7,0,1};
+        int cap = 4;
+
+        System.out.println("FIFO Faults: " + fifo(pages, cap));
+        System.out.println("LRU Faults: " + lru(pages, cap));
+        System.out.println("OPT Faults: " + optimal(pages, cap));
+    }
+}

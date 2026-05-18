@@ -1,0 +1,162 @@
+import java.util.*;
+
+public class SchedulingAlgorithms {
+    static Scanner sc = new Scanner(System.in);
+
+    public static void main(String[] args) {
+        while (true) {
+            System.out.println("\n=== CPU Scheduling Algorithms ===");
+            System.out.println("1. FCFS  2. Preemptive SJF  3. Priority  4. Round Robin  5. Exit");
+            System.out.print("Choose (1–5): ");
+            int ch = safeInt(1, 5);
+            if (ch == 5) break;
+
+            System.out.print("Enter number of processes: ");
+            int n = safeInt(1, Integer.MAX_VALUE);
+
+            int[] pid = new int[n], at = new int[n], bt = new int[n], pt = new int[n];
+            for (int i = 0; i < n; i++) {
+                pid[i] = i + 1;
+                System.out.print("Arrival time of P" + pid[i] + ": "); at[i] = safeInt(0, Integer.MAX_VALUE);
+                System.out.print("Burst time of P" + pid[i] + ": "); bt[i] = safeInt(1, Integer.MAX_VALUE);
+                if (ch == 3) { System.out.print("Priority of P" + pid[i] + ": "); pt[i] = safeInt(0, Integer.MAX_VALUE); }
+            }
+
+            int q = 0;
+            if (ch == 4) { System.out.print("Enter time quantum: "); q = safeInt(1, Integer.MAX_VALUE); }
+
+            switch (ch) {
+                case 1 -> runFCFS(pid, at, bt);
+                case 2 -> runPreSJF(pid, at, bt);
+                case 3 -> runPriority(pid, at, bt, pt);
+                case 4 -> runRR(pid, at, bt, q);
+            }
+        }
+    }
+
+    // ---------- Input Helper ----------
+    static int safeInt(int min, int max) {
+        while (true) {
+            try {
+                int val = sc.nextInt();
+                if (val >= min && val <= max) return val;
+                System.out.print("Enter valid number (" + min + "-" + max + "): ");
+            } catch (Exception e) {
+                System.out.print("Invalid input, try again: ");
+                sc.nextLine();
+            }
+        }
+    }
+
+    // ---------- FCFS ----------
+    static void runFCFS(int[] pid, int[] at, int[] bt) {
+        int n = pid.length;
+        int[] ct = new int[n], tat = new int[n], wt = new int[n];
+        sortBy(at, bt, pid);
+        float avgWT = 0, avgTAT = 0;
+        for (int i = 0; i < n; i++) {
+            ct[i] = (i == 0) ? at[i] + bt[i] : Math.max(ct[i - 1], at[i]) + bt[i];
+            tat[i] = ct[i] - at[i];
+            wt[i] = tat[i] - bt[i];
+            avgWT += wt[i];
+            avgTAT += tat[i];
+        }
+        print(pid, at, bt, ct, tat, wt, avgWT / n, avgTAT / n);
+    }
+
+    // ---------- Preemptive SJF ----------
+    static void runPreSJF(int[] pid, int[] at, int[] bt) {
+        int n = pid.length, t = 0, done = 0;
+        int[] rem = bt.clone(), ct = new int[n];
+        boolean[] fin = new boolean[n];
+        while (done < n) {
+            int idx = -1, min = Integer.MAX_VALUE;
+            for (int i = 0; i < n; i++)
+                if (!fin[i] && at[i] <= t && rem[i] < min) { min = rem[i]; idx = i; }
+            if (idx == -1) { t++; continue; }
+            rem[idx]--; t++;
+            if (rem[idx] == 0) { fin[idx] = true; ct[idx] = t; done++; }
+        }
+        calcAndPrint(pid, at, bt, ct);
+    }
+
+    // ---------- Priority (Non-preemptive) ----------
+    static void runPriority(int[] pid, int[] at, int[] bt, int[] pr) {
+        int n = pid.length, t = 0, done = 0;
+        int[] ct = new int[n]; boolean[] fin = new boolean[n];
+        while (done < n) {
+            int idx = -1, minP = Integer.MAX_VALUE;
+            for (int i = 0; i < n; i++)
+                if (!fin[i] && at[i] <= t && pr[i] < minP) { minP = pr[i]; idx = i; }
+            if (idx == -1) { t++; continue; }
+            t += bt[idx]; ct[idx] = t; fin[idx] = true; done++;
+        }
+        calcAndPrint(pid, at, bt, ct, pr);
+    }
+
+    // ---------- Round Robin ----------
+    static void runRR(int[] pid, int[] at, int[] bt, int q) {
+        int n = pid.length, t = 0, done = 0;
+        int[] rem = bt.clone(), ct = new int[n];
+        Queue<Integer> qn = new LinkedList<>();
+        boolean[] added = new boolean[n];
+        while (done < n) {
+            for (int i = 0; i < n; i++)
+                if (at[i] <= t && !added[i]) { qn.add(i); added[i] = true; }
+            if (qn.isEmpty()) { t++; continue; }
+            int i = qn.poll(), slice = Math.min(q, rem[i]);
+            t += slice; rem[i] -= slice;
+            for (int j = 0; j < n; j++)
+                if (at[j] <= t && !added[j]) { qn.add(j); added[j] = true; }
+            if (rem[i] > 0) qn.add(i); else { ct[i] = t; done++; }
+        }
+        calcAndPrint(pid, at, bt, ct);
+    }
+
+    // ---------- Helpers ----------
+    static void sortBy(int[] at, int[] bt, int[] pid) {
+        for (int i = 0; i < at.length - 1; i++)
+            for (int j = i + 1; j < at.length; j++)
+                if (at[i] > at[j]) {
+                    swap(at, i, j); swap(bt, i, j); swap(pid, i, j);
+                }
+    }
+
+    static void swap(int[] a, int i, int j) { int t = a[i]; a[i] = a[j]; a[j] = t; }
+
+    static void calcAndPrint(int[] pid, int[] at, int[] bt, int[] ct) {
+        calcAndPrint(pid, at, bt, ct, null);
+    }
+
+    static void calcAndPrint(int[] pid, int[] at, int[] bt, int[] ct, int[] pr) {
+        int n = pid.length; int[] tat = new int[n], wt = new int[n];
+        float avgW = 0, avgT = 0;
+        for (int i = 0; i < n; i++) {
+            tat[i] = ct[i] - at[i];
+            wt[i] = tat[i] - bt[i];
+            avgW += wt[i]; avgT += tat[i];
+        }
+        print(pid, at, bt, ct, tat, wt, avgW / n, avgT / n, pr);
+    }
+
+    static void print(int[] pid, int[] at, int[] bt, int[] ct, int[] tat, int[] wt, float aW, float aT) {
+        print(pid, at, bt, ct, tat, wt, aW, aT, null);
+    }
+
+    static void print(int[] pid, int[] at, int[] bt, int[] ct, int[] tat, int[] wt,
+                      float aW, float aT, int[] pr) {
+        System.out.println();
+        if (pr != null)
+            System.out.printf("%-8s%-8s%-8s%-10s%-10s%-10s%-10s\n", "PID","AT","BT","PRIOR","CT","TAT","WT");
+        else
+            System.out.printf("%-8s%-8s%-8s%-10s%-10s%-10s\n","PID","AT","BT","CT","TAT","WT");
+        for (int i = 0; i < pid.length; i++)
+            if (pr != null)
+                System.out.printf("P%-7d%-8d%-8d%-10d%-10d%-10d%-10d\n",
+                        pid[i], at[i], bt[i], pr[i], ct[i], tat[i], wt[i]);
+            else
+                System.out.printf("P%-7d%-8d%-8d%-10d%-10d%-10d\n",
+                        pid[i], at[i], bt[i], ct[i], tat[i], wt[i]);
+        System.out.printf("\nAvg WT: %.2f | Avg TAT: %.2f\n", aW, aT);
+    }
+}

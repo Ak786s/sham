@@ -1,0 +1,17 @@
+// Main.java
+public class Main {
+    public static void main(String[] args) {
+        try {
+            System.out.println("Running Two-Pass Macro Processor...");
+            PassOne pass1 = new PassOne();
+            pass1.execute("input.asm");
+
+            PassTwo pass2 = new PassTwo();
+            pass2.execute(pass1);
+
+            System.out.println("Macro processing completed successfully!");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
